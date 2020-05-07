@@ -24,9 +24,9 @@
 
 import logging
 import os
+from typing import Optional
 
 from werkzeug.contrib.cache import FileSystemCache
-
 
 logger = logging.getLogger()
 
@@ -45,12 +45,12 @@ def get_env_variable(var_name, default=None):
             raise EnvironmentError(error_msg)
 
 
-DATABASE_DIALECT = get_env_variable("DATABASE_DIALECT")
-DATABASE_USER = get_env_variable("DATABASE_USER")
-DATABASE_PASSWORD = get_env_variable("DATABASE_PASSWORD")
-DATABASE_HOST = get_env_variable("DATABASE_HOST")
-DATABASE_PORT = get_env_variable("DATABASE_PORT")
-DATABASE_DB = get_env_variable("DATABASE_DB")
+DATABASE_DIALECT = get_env_variable("DB_DIALECT")
+DATABASE_USER = get_env_variable("DB_USER")
+DATABASE_PASSWORD = get_env_variable("DB_PASSWORD")
+DATABASE_HOST = get_env_variable("DB_HOST")
+DATABASE_PORT = get_env_variable("DB_PORT")
+DATABASE_DB = get_env_variable("SUPERSET_DB")
 
 # The SQLAlchemy connection string.
 SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
@@ -65,7 +65,7 @@ SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
 REDIS_HOST = get_env_variable("REDIS_HOST")
 REDIS_PORT = get_env_variable("REDIS_PORT")
 
-RESULTS_BACKEND = FileSystemCache('/app/superset_home/sqllab')
+RESULTS_BACKEND = FileSystemCache("/app/superset_home/sqllab")
 
 
 class CeleryConfig(object):
@@ -78,6 +78,7 @@ class CeleryConfig(object):
 
 CELERY_CONFIG = CeleryConfig
 
+SECRET_KEY = "tQIhoYJb8um9MNFisieL9jS3+gcEw95Lfc/EQHKR58prOMJQKx"
 #
 # Optionally import superset_config_docker.py (which will have been included on
 # the PYTHONPATH) in order to allow for local settings to be overridden
@@ -91,3 +92,93 @@ try:
     )
 except ImportError:
     logger.info("Using default Docker config...")
+
+HTTP_HEADERS = {"X-Frame-Options": "ALLOWALL"}
+
+
+from jose import jwt
+from flask_login import login_user
+
+from flask import request
+
+
+class CexData:
+    database: str
+    user_id: int
+
+    def __init__(self, database: str, user_id: int):
+        self.database = database
+        self.user_id = user_id
+
+
+class TokenAuth:
+    def __init__(self, app):
+        self.app = app
+
+    def before_request(self):
+        from superset import security_manager as sm
+
+        environ = request.environ
+        if "HTTP_COOKIE" in environ and "auth_token" in environ.get("HTTP_COOKIE"):
+            http_cookies: str = environ.pop("HTTP_COOKIE", None)
+            logger.debug("found cookies")
+            auth_cookie = [
+                cookie
+                for cookie in http_cookies.split("; ")
+                if cookie.startswith("auth_token")
+            ]
+            if auth_cookie:
+                auth_cookie = auth_cookie[0]
+                logger.debug(f"found auth cookie {auth_cookie}")
+                decoded_token = jwt.get_unverified_claims(
+                    auth_cookie.split("auth_token=")[1]
+                )
+                logger.debug(f"decoded_token {decoded_token}")
+                role = decoded_token.get("cex", {}).get("role")
+                logger.debug(f"setting user: ")
+                logger.debug(role)
+                environ["REMOTE_USER"] = role
+                environ["user_id"] = decoded_token.get("cex", {}).get("uid")
+                environ["role"] = decoded_token.get("cex", {}).get("role")
+                environ["database"] = "cex_blp"
+                user = sm.find_user(username=role)
+                if user:
+                    logger.debug("login user")
+                    login_user(user)
+        else:
+            environ["user_id"] = 1
+            environ["role"] = "sfe"
+            environ["database"] = "cex"
+
+
+from superset.app import SupersetAppInitializer
+
+
+def app_init(app):
+    logging.info("Registering RemoteUserLogin")
+    app.before_request(TokenAuth(app).before_request)
+    return SupersetAppInitializer(app)
+
+
+APP_INIT = app_init
+
+
+def current_user_id():
+    return request.environ.get("user_id")
+
+
+def database():
+    return request.environ.get("database")
+
+
+def role():
+    return request.environ.get("role")
+
+
+context_addons = {
+    "cex_user_id": lambda: current_user_id(),
+    "cex_database": lambda: database(),
+    "cex_role": lambda: role(),
+}
+
+JINJA_CONTEXT_ADDONS = context_addons

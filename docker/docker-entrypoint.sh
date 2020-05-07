@@ -17,6 +17,16 @@
 #
 set -eo pipefail
 
+while [[ ! -f /var/configs/superset_config.py ]]
+do
+  echo "Config file /var/configs/superset_config.py not visible yet. Waiting ..."
+  sleep 2
+done
+
+### Move configuration file in correct location
+echo "Copying /var/configs/superset_config.py /code/cEX/superset_config.py"
+cp /var/configs/superset_config.py /app/pythonpath/superset_config.py
+
 if [ "${#}" -ne 0 ]; then
     exec "${@}"
 else

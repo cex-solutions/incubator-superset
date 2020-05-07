@@ -121,3 +121,17 @@ RUN cd /app \
     && pip install --no-cache -r requirements-dev.txt -r requirements-extra.txt \
     && pip install --no-cache -r requirements-local.txt || true
 USER superset
+
+######################################################################
+# Prod image...
+######################################################################
+FROM lean AS prod
+
+COPY ./requirements-dev.txt ./docker/requirements* /app/
+
+USER root
+RUN cd /app \
+    && pip install --no-cache -r requirements-extra.txt \
+    && pip install --no-cache -r requirements-local.txt || true
+USER superset
+
