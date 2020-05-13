@@ -26,6 +26,7 @@ import logging
 import os
 from typing import Optional
 
+from celery.schedules import crontab
 from werkzeug.contrib.cache import FileSystemCache
 
 logger = logging.getLogger()
@@ -101,6 +102,8 @@ from jose import jwt
 from flask_login import login_user
 
 from flask import request
+
+crontab()
 
 
 class CexData:

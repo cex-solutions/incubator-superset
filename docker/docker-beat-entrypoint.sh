@@ -27,4 +27,4 @@ done
 echo "Copying /var/configs/superset_config.py /code/cEX/superset_config.py"
 cp /var/configs/superset_config.py /app/pythonpath/superset_config.py
 
-celery worker --app=superset.tasks.celery_app:app --pool=prefork -O fair -c 4
+celery beat --app=superset.tasks.celery_app:app
