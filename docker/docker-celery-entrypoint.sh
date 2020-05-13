@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,33 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-COMPOSE_PROJECT_NAME=superset
+set -eo pipefail
 
-# database configurations (do not modify)
-SUPERSET_DB=superset
-DB_HOST=db
-DB_PASSWORD=superset
-DB_USER=superset
+while [[ ! -f /var/configs/superset_config.py ]]
+do
+  echo "Config file /var/configs/superset_config.py not visible yet. Waiting ..."
+  sleep 2
+done
 
+### Move configuration file in correct location
+echo "Copying /var/configs/superset_config.py /code/cEX/superset_config.py"
+cp /var/configs/superset_config.py /app/pythonpath/superset_config.py
 
-
-# database engine specific environment variables
-# change the below if you prefers another database engine
-DB_PORT=5432
-DB_DIALECT=postgres
-#POSTGRES_DB=superset
-POSTGRES_USER=superset
-POSTGRES_PASSWORD=superset
-#MYSQL_DATABASE=superset
-#MYSQL_USER=superset
-#MYSQL_PASSWORD=superset
-#MYSQL_RANDOM_ROOT_PASSWORD=yes
-
-# Add the mapped in /app/pythonpath_docker which allows devs to override stuff
-PYTHONPATH=/app/pythonpath:/app/pythonpath_docker
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-FLASK_ENV=development
-SUPERSET_ENV=development
-SUPERSET_LOAD_EXAMPLES=yes
+celery worker --app=superset.tasks.celery_app:app -B --pool=prefork -O fair -c 4

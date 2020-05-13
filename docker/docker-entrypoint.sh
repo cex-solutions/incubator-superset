@@ -31,14 +31,15 @@ if [ "${#}" -ne 0 ]; then
     exec "${@}"
 else
     gunicorn \
-        --bind  "0.0.0.0:${SUPERSET_PORT}" \
-        --access-logfile '-' \
-        --error-logfile '-' \
-        --workers 1 \
-        --worker-class gthread \
-        --threads 20 \
-        --timeout 60 \
-        --limit-request-line 0 \
-        --limit-request-field_size 0 \
-        "${FLASK_APP}"
+      -w 10 \
+      -k gevent \
+      --timeout 120 \
+      -b "0.0.0.0:${SUPERSET_PORT}" \
+      --limit-request-line 0 \
+      --limit-request-field_size 0 \
+      --access-logfile '-' \
+      --error-logfile '-' \
+      --statsd-host statsd:8125 \
+      "${FLASK_APP}"
 fi
+

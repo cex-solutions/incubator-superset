@@ -160,7 +160,7 @@ def app_init(app):
     return SupersetAppInitializer(app)
 
 
-APP_INIT = app_init
+APP_INITIALIZER = app_init
 
 
 def current_user_id():
