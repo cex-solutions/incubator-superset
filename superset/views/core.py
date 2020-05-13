@@ -1716,10 +1716,14 @@ class Superset(BaseSupersetView):
                     force=True,
                 )
 
-                g.form_data = form_data
-                payload = obj.get_payload()
-                delattr(g, "form_data")
-                error = payload["error"]
+                # Temporarily define the form-data in the request context which may be
+                # leveraged by the Jinja macros.
+                with app.test_request_context(
+                    data={"form_data": json.dumps(form_data)}
+                ):
+                    payload = obj.get_payload()
+
+                error = payload["errors"] or None
                 status = payload["status"]
             except Exception as ex:
                 error = utils.error_msg_from_exception(ex)
@@ -2306,14 +2310,14 @@ class Superset(BaseSupersetView):
         query: Query,
         expand_data: bool,
         log_params: Optional[Dict[str, Any]] = None,
-    ) -> str:
+    ) -> Response:
         """
             Send SQL JSON query to celery workers
 
         :param session: SQLAlchemy session object
         :param rendered_query: the rendered query to perform by workers
         :param query: The query (SQLAlchemy) object
-        :return: String JSON response
+        :return: A Flask Response
         """
         logger.info(f"Query {query.id}: Running query on a Celery worker")
         # Ignore the celery future object and the request may time out.
@@ -2357,13 +2361,13 @@ class Superset(BaseSupersetView):
         query: Query,
         expand_data: bool,
         log_params: Optional[Dict[str, Any]] = None,
-    ) -> str:
+    ) -> Response:
         """
             Execute SQL query (sql json)
 
         :param rendered_query: The rendered query (included templates)
         :param query: The query SQL (SQLAlchemy) object
-        :return: String JSON response
+        :return: A Flask Response
         """
         try:
             timeout = config["SQLLAB_TIMEOUT"]
