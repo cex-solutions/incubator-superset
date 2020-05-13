@@ -27,4 +27,4 @@ done
 echo "Copying /var/configs/superset_config.py /code/cEX/superset_config.py"
 cp /var/configs/superset_config.py /app/pythonpath/superset_config.py
 
-celery beat --app=superset.tasks.celery_app:app
+celery beat --app=superset.tasks.celery_app:app --pidfile /tmp/celerybeat.pid  -s /tmp/celerybeat-schedule
