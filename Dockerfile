@@ -98,6 +98,7 @@ RUN cd /app \
         && pip install -e .
 
 COPY ./docker/docker-entrypoint.sh /usr/bin/
+COPY ./docker/docker-celery-entrypoint.sh /usr/bin/
 
 WORKDIR /app
 

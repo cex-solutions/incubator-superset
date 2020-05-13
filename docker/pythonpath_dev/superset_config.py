@@ -49,6 +49,7 @@ DATABASE_DIALECT = get_env_variable("DB_DIALECT")
 DATABASE_USER = get_env_variable("DB_USER")
 DATABASE_PASSWORD = get_env_variable("DB_PASSWORD")
 DATABASE_HOST = get_env_variable("DB_HOST")
+
 DATABASE_PORT = get_env_variable("DB_PORT")
 DATABASE_DB = get_env_variable("SUPERSET_DB")
 
