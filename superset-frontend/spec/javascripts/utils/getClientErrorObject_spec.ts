@@ -48,8 +48,8 @@ describe('getClientErrorObject()', () => {
     const jsonError = {
       errors: [
         {
-          errorType: ErrorTypeEnum.GENERIC_DB_ENGINE_ERROR,
-          extra: { engine: 'presto' },
+          error_type: ErrorTypeEnum.GENERIC_DB_ENGINE_ERROR,
+          extra: { engine: 'presto', link: 'https://www.google.com' },
           level: 'error',
           message: 'presto error: test error',
         },
@@ -60,6 +60,7 @@ describe('getClientErrorObject()', () => {
     return getClientErrorObject(new Response(jsonErrorString)).then(
       errorObj => {
         expect(errorObj.error).toEqual(jsonError.errors[0].message);
+        expect(errorObj.link).toEqual(jsonError.errors[0].extra.link);
       },
     );
   });

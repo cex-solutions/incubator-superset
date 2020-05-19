@@ -16,10 +16,10 @@
 # under the License.
 # isort:skip_file
 """Unit tests for Superset"""
-import cgi
 import csv
 import datetime
 import doctest
+import html
 import io
 import json
 import logging
@@ -951,7 +951,8 @@ class CoreTests(SupersetTestCase):
         data = self.get_json_resp("/superset/explore_json/", raise_on_error=False)
 
         self.assertEqual(
-            data["error"], "The datasource associated with this chart no longer exists"
+            data["errors"][0]["message"],
+            "The datasource associated with this chart no longer exists",
         )
 
     @mock.patch("superset.security.SupersetSecurityManager.schemas_accessible_by_user")
@@ -1149,7 +1150,11 @@ class CoreTests(SupersetTestCase):
             {"FOO": lambda x: 1, "super": "set"},
             default=utils.pessimistic_json_iso_dttm_ser,
         )
-        html = cgi.escape(encoded).replace("'", "&#39;").replace('"', "&#34;")
+        html_string = (
+            html.escape(encoded, quote=False)
+            .replace("'", "&#39;")
+            .replace('"', "&#34;")
+        )
 
         urls = [
             "/superset/sqllab",
@@ -1160,7 +1165,7 @@ class CoreTests(SupersetTestCase):
         ]
         for url in urls:
             data = self.get_resp(url)
-            self.assertTrue(html in data)
+            self.assertTrue(html_string in data)
 
     @mock.patch.dict(
         "superset.extensions.feature_flag_manager._feature_flags",

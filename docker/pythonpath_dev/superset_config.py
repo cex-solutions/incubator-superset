@@ -27,7 +27,7 @@ import os
 from typing import Optional
 
 from celery.schedules import crontab
-from werkzeug.contrib.cache import FileSystemCache
+from cachelib.file import FileSystemCache
 
 logger = logging.getLogger()
 
@@ -66,19 +66,23 @@ SQLALCHEMY_DATABASE_URI = "%s://%s:%s@%s:%s/%s" % (
 
 REDIS_HOST = get_env_variable("REDIS_HOST")
 REDIS_PORT = get_env_variable("REDIS_PORT")
+REDIS_CELERY_DB = get_env_variable("REDIS_CELERY_DB", 0)
+REDIS_RESULTS_DB = get_env_variable("REDIS_CELERY_DB", 1)
+
 
 RESULTS_BACKEND = FileSystemCache("/app/superset_home/sqllab")
 
 
 class CeleryConfig(object):
-    BROKER_URL = "redis://%s:%s/0" % (REDIS_HOST, REDIS_PORT)
+    BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_DB}"
     CELERY_IMPORTS = ("superset.sql_lab",)
-    CELERY_RESULT_BACKEND = "redis://%s:%s/1" % (REDIS_HOST, REDIS_PORT)
+    CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_RESULTS_DB}"
     CELERY_ANNOTATIONS = {"tasks.add": {"rate_limit": "10/s"}}
     CELERY_TASK_PROTOCOL = 1
 
 
 CELERY_CONFIG = CeleryConfig
+SQLLAB_CTAS_NO_LIMIT = True
 
 SECRET_KEY = "tQIhoYJb8um9MNFisieL9jS3+gcEw95Lfc/EQHKR58prOMJQKx"
 #
