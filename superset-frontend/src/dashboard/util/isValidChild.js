@@ -67,7 +67,7 @@ const parentMaxDepthLookup = {
     [DIVIDER_TYPE]: depthOne,
     [HEADER_TYPE]: depthOne,
     [ROW_TYPE]: depthOne,
-    [TABS_TYPE]: depthOne,
+    [TABS_TYPE]: depthFive,
   },
 
   [ROW_TYPE]: {
@@ -77,7 +77,7 @@ const parentMaxDepthLookup = {
   },
 
   [TABS_TYPE]: {
-    [TAB_TYPE]: depthTwo,
+    [TAB_TYPE]: depthFive,
   },
 
   [TAB_TYPE]: {
@@ -87,7 +87,7 @@ const parentMaxDepthLookup = {
     [DIVIDER_TYPE]: depthTwo,
     [HEADER_TYPE]: depthTwo,
     [ROW_TYPE]: depthTwo,
-    [TABS_TYPE]: depthTwo,
+    [TABS_TYPE]: depthFive,
   },
 
   [COLUMN_TYPE]: {
@@ -96,6 +96,7 @@ const parentMaxDepthLookup = {
     [MARKDOWN_TYPE]: depthFive,
     [ROW_TYPE]: depthThree,
     [DIVIDER_TYPE]: depthThree,
+    [TABS_TYPE]: depthFive,
   },
 
   // these have no valid children
