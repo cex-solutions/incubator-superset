@@ -101,6 +101,8 @@ except ImportError:
 
 HTTP_HEADERS = {"X-Frame-Options": "ALLOWALL"}
 
+ENABLE_CORS = True
+
 
 from jose import jwt
 from flask_login import login_user

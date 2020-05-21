@@ -19,3 +19,4 @@ redis==3.2.1
 crontab==0.22.6
 mysqlclient==1.4.6
 python-jose==3.0.1
+dnspython==1.16.0
