@@ -20,3 +20,4 @@ crontab==0.22.6
 mysqlclient==1.4.6
 python-jose==3.0.1
 dnspython==1.16.0
+flask_cors==3.0.7
