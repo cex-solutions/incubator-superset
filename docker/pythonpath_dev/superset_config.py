@@ -109,8 +109,6 @@ from flask_login import login_user
 
 from flask import request
 
-crontab()
-
 
 class CexData:
     database: str
@@ -150,7 +148,7 @@ class TokenAuth:
                 environ["REMOTE_USER"] = role
                 environ["user_id"] = decoded_token.get("cex", {}).get("uid")
                 environ["role"] = decoded_token.get("cex", {}).get("role")
-                environ["database"] = "cex_blp"
+                environ["database"] = decoded_token.get("cex", {}).get("pid")
                 user = sm.find_user(username=role)
                 if user:
                     logger.debug("login user")
@@ -158,7 +156,7 @@ class TokenAuth:
         else:
             environ["user_id"] = 1
             environ["role"] = "sfe"
-            environ["database"] = "cex"
+            environ["database"] = "stage-az-ro"
 
 
 from superset.app import SupersetAppInitializer
