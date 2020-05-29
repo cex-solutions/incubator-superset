@@ -636,10 +636,8 @@ class Superset(BaseSupersetView):
     def get_samples(self, viz_obj):
         return self.json_response({"data": viz_obj.get_samples()})
 
-    def generate_json(
-        self, viz_obj, csv=False, query=False, results=False, samples=False
-    ):
-        if csv:
+    def generate_json(self, viz_obj, response_type: Optional[str] = None) -> Response:
+        if response_type == utils.ChartDataResponseFormat.CSV:
             return CsvResponse(
                 viz_obj.get_csv(),
                 status=200,
@@ -647,13 +645,13 @@ class Superset(BaseSupersetView):
                 mimetype="application/csv",
             )
 
-        if query:
+        if response_type == utils.ChartDataResponseType.QUERY:
             return self.get_query_string_response(viz_obj)
 
-        if results:
+        if response_type == utils.ChartDataResponseType.RESULTS:
             return self.get_raw_results(viz_obj)
 
-        if samples:
+        if response_type == utils.ChartDataResponseType.SAMPLES:
             return self.get_samples(viz_obj)
 
         payload = viz_obj.get_payload()
@@ -687,6 +685,21 @@ class Superset(BaseSupersetView):
         form_data = get_form_data()[0]
         form_data["layer_id"] = layer_id
         form_data["filters"] = [{"col": "layer_id", "op": "==", "val": layer_id}]
+        # Set all_columns to ensure the TableViz returns the necessary columns to the
+        # frontend.
+        form_data["all_columns"] = [
+            "created_on",
+            "changed_on",
+            "id",
+            "start_dttm",
+            "end_dttm",
+            "layer_id",
+            "short_descr",
+            "long_descr",
+            "json_metadata",
+            "created_by_fk",
+            "changed_by_fk",
+        ]
         datasource = AnnotationDatasource()
         viz_obj = viz.viz_types["table"](datasource, form_data=form_data, force=False)
         payload = viz_obj.get_payload()
@@ -715,11 +728,14 @@ class Superset(BaseSupersetView):
         payloads based on the request args in the first block
 
         TODO: break into one endpoint for each return shape"""
-        csv = request.args.get("csv") == "true"
-        query = request.args.get("query") == "true"
-        results = request.args.get("results") == "true"
-        samples = request.args.get("samples") == "true"
-        force = request.args.get("force") == "true"
+        response_type = utils.ChartDataResponseFormat.JSON.value
+        responses = [resp_format for resp_format in utils.ChartDataResponseFormat]
+        responses.extend([resp_type for resp_type in utils.ChartDataResponseType])
+        for response_option in responses:
+            if request.args.get(response_option) == "true":
+                response_type = response_option
+                break
+
         form_data = get_form_data()[0]
 
         try:
@@ -731,12 +747,10 @@ class Superset(BaseSupersetView):
                 datasource_type=datasource_type,
                 datasource_id=datasource_id,
                 form_data=form_data,
-                force=force,
+                force=request.args.get("force") == "true",
             )
 
-            return self.generate_json(
-                viz_obj, csv=csv, query=query, results=results, samples=samples
-            )
+            return self.generate_json(viz_obj, response_type)
         except SupersetException as ex:
             return json_error_response(utils.error_msg_from_exception(ex))
 
@@ -946,6 +960,7 @@ class Superset(BaseSupersetView):
         payload = json.dumps(
             datasource.values_for_column(column, config["FILTER_SELECT_ROW_LIMIT"]),
             default=utils.json_int_dttm_ser,
+            ignore_nan=True,
         )
         return json_success(payload)
 
@@ -2149,7 +2164,7 @@ class Superset(BaseSupersetView):
             return json_error_response(str(ex))
 
         spec = mydb.db_engine_spec
-        query_cost_formatters = get_feature_flags().get(
+        query_cost_formatters: Dict[str, Any] = get_feature_flags().get(
             "QUERY_COST_FORMATTERS_BY_ENGINE", {}
         )
         query_cost_formatter = query_cost_formatters.get(

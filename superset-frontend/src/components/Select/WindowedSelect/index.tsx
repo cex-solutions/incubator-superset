@@ -16,8 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { COLUMN_TYPE, CHART_TYPE, MARKDOWN_TYPE } from './componentTypes';
+import Select from 'react-select';
+import Async from 'react-select/async';
+import Creatable from 'react-select/creatable';
+import AsyncCreatable from 'react-select/async-creatable';
+import windowed from './windowed';
 
-export default function componentIsResizable(entity) {
-  return [COLUMN_TYPE, CHART_TYPE, MARKDOWN_TYPE].indexOf(entity.type) > -1;
-}
+export * from './windowed';
+
+export const WindowedSelect = windowed(Select);
+export const WindowedAsyncSelect = windowed(Async);
+export const WindowedCreatableSelect = windowed(Creatable);
+export const WindowedAsyncCreatableSelect = windowed(AsyncCreatable);
+export default WindowedSelect;
